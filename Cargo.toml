@@ -1,0 +1,17 @@
+[package]
+name = "msp_gps_toy"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serial2 = "0.1.7"
+getopts = "0.2"
+rand = "0.8.5"
+chrono = "0.4.26"
+
+# Remove this section on older rustc ....
+[profile.release]
+strip = true
+opt-level = "z"
