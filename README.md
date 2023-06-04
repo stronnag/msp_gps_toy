@@ -1,4 +1,4 @@
-# USE_MSP_RC_OVERRIDE / INAV example
+# MSP GPS / INAV example
 
 ## Overview
 
