@@ -1,4 +1,7 @@
-//pub const MSG_IDENT: u16 = 100;
+use serial2::SerialPort;
+use std::io;
+use std::time::Duration;
+
 pub const MSG_NAME: u16 = 10;
 pub const MSG_API_VERSION: u16 = 1;
 pub const MSG_FC_VARIANT: u16 = 2;
@@ -9,16 +12,13 @@ pub const MSG_ANALOG: u16 = 110;
 pub const MSP_SET_RAW_GPS: u16 = 201;
 pub const MSP2_SENSOR_GPS: u16 = 0x1f03;
 
-
+//pub const MSG_IDENT: u16 = 100;
 //pub const MSG_WP_GETINFO: u16 = 20;
 //pub const MSG_RAW_GPS: u16 = 106;
 //pub const MSG_DEBUGMSG: u16 = 253;
 //pub const MSG_STATUS_EX: u16 = 150;
 //pub const MSG_INAV_STATUS: u16 = 0x2000;
 //pub const MSG_MISC2: u16 = 0x203a;
-
-use serial2::SerialPort;
-use std::io;
 
 enum States {
     Init,
@@ -69,6 +69,8 @@ impl MSPDev {
     pub fn new (defdev: &str) -> io::Result<MSPDev>   {
 	match SerialPort::open(defdev, 115_200) {
             Ok(sd) => {
+		let mut sd = sd;
+                sd.set_read_timeout(Duration::from_millis(100))?;
 		return Ok(MSPDev{sd,});
 	    },
 	    Err(_e) => return Err(_e),
@@ -82,6 +84,7 @@ impl MSPDev {
 	let mut count = 0u16;
 	let mut dirnok = false;
 	let mut inp = [0u8; 256];
+	let mut toc = 0;
 	loop  {
             match self.sd.read(&mut inp) {
 		Ok(0) => {
@@ -91,6 +94,7 @@ impl MSPDev {
                     return Ok(msg);
 		},
 		Ok(nbytes) => {
+		    toc = 0;
                     for e in inp.iter().take(nbytes) {
 			match n {
                             States::Init => {
@@ -208,9 +212,19 @@ impl MSPDev {
 			}
                     }
 		},
-		Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => continue,
-		Err(_e) => {
-                    return Err(_e);
+		Err(e) => {
+		    if e.kind() == std::io::ErrorKind::TimedOut {
+			toc += 1;
+			if toc == 50 {
+			    return Err(e)
+			}
+			if toc % 10 == 0 {
+			    eprintln!("Read timeout");
+			}
+			continue
+		    } else {
+			return Err(e)
+		    }
 		},
             }
 	}

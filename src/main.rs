@@ -178,7 +178,6 @@ fn main() ->  io::Result<()> {
 	    let (vx,vy) = polar2cartesian(gspd as f64, gcse as f64);
             g.nedveleast = (vx * 100.0) as i32;
 	    g.nedvelnorth = (vy * 100.0) as i32;
-
 	    msd.write_msp(msp::MSP2_SENSOR_GPS, s)?;
 	} else {
 	    r.numsat = numsat;
