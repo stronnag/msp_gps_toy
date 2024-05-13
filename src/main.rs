@@ -54,6 +54,13 @@ struct RawGps {
     gspd: u16,
 }
 
+#[derive(Default)]
+#[repr(packed)]
+struct RangeSensor {
+    quality: u8,
+    dist_mm: i32,
+}
+
 fn print_usage(program: &str, opts: &Options) {
     let brief = format!(
         "Usage: {} [options] device-node\nVersion: {}",
@@ -67,7 +74,7 @@ fn main() ->  io::Result<()> {
     let program = args[0].clone();
     let mut opts = Options::new();
     opts.optflag("v", "version", "Show version");
-    opts.optflag("s", "sensor", "Use MSP2_SENSOR_GPS (vice MSP_SET_RAW GPS)");
+    opts.optflag("r", "raw-gps", "Use MSP_SET_RAW GPS (vice MSP2_SENSOR_GPS)");
     opts.optflag("h", "help", "print this help menu");
 
    let matches = match opts.parse(&args[1..]) {
@@ -87,7 +94,7 @@ fn main() ->  io::Result<()> {
         return Ok(());
     }
 
-    let use_sensor: bool =  matches.opt_present("s");
+    let use_sensor: bool =  !matches.opt_present("r");
 
     let defdev = if !matches.free.is_empty() {
         &matches.free[0]
@@ -127,8 +134,17 @@ fn main() ->  io::Result<()> {
 
     let mut rng = rand::thread_rng();
     let s: &[u8];
+    let t: &[u8];
     let mut g = GpsSol::default();
     let mut r = RawGps::default();
+    let mut sr = RangeSensor::default();
+
+
+    let p: *const RangeSensor = &sr;
+    let p: *const u8 = p as *const u8;
+    t = unsafe {
+        slice::from_raw_parts(p, mem::size_of::<RangeSensor>())
+    };
 
     if use_sensor {
 	let p: *const GpsSol = &g;
@@ -159,37 +175,47 @@ fn main() ->  io::Result<()> {
 	println!("Message: MSP_SET_RAW_GPS");
     }
 
+    sr.quality = 127;
+    sr.dist_mm = 1234;
+
     let mut start = Instant::now();
 
+    let mut nn = 0;
     loop {
-	if use_sensor {
-            let now = Utc::now();
-            g.satellitesinview = numsat;
-            g.year = now.year() as u16;
-            g.month = now.month() as u8;
-            g.day = now.day() as u8;
-            g.hour = now.hour() as u8;
-            g.min = now.minute() as u8;
-            g.sec = now.second() as u8;
-            g.latitude = lat;
-            g.longitude = lon;
-            g.mslaltitude = (alt*100) as i32;
-	    g.groundcourse = gcse*100;
-	    let (vx,vy) = polar2cartesian(gspd as f64, gcse as f64);
-            g.nedveleast = (vx * 100.0) as i32;
-	    g.nedvelnorth = (vy * 100.0) as i32;
-	    msd.write_msp(msp::MSP2_SENSOR_GPS, s)?;
-	} else {
-	    r.numsat = numsat;
-            r.lat =  lat;
-            r.lon = lon;
-            r.alt = alt;
-            r.gspd = gspd*100;
-	    match msd.send_msp(msp::MSP_SET_RAW_GPS, s) {
-		Ok(_v) => (), //println!("{:?}", _v),
-		Err(e) => return Err(e),
+	if nn &1 == 0 {
+	    if use_sensor {
+		let now = Utc::now();
+		g.satellitesinview = numsat;
+		g.year = now.year() as u16;
+		g.month = now.month() as u8;
+		g.day = now.day() as u8;
+		g.hour = now.hour() as u8;
+		g.min = now.minute() as u8;
+		g.sec = now.second() as u8;
+		g.latitude = lat;
+		g.longitude = lon;
+		g.mslaltitude = (alt*100) as i32;
+		g.groundcourse = gcse*100;
+		let (vx,vy) = polar2cartesian(gspd as f64, gcse as f64);
+		g.nedveleast = (vx * 100.0) as i32;
+		g.nedvelnorth = (vy * 100.0) as i32;
+		msd.write_msp(msp::MSP2_SENSOR_GPS, s)?;
+	    } else {
+		r.numsat = numsat;
+		r.lat =  lat;
+		r.lon = lon;
+		r.alt = alt;
+		r.gspd = gspd*100;
+		match msd.send_msp(msp::MSP_SET_RAW_GPS, s) {
+		    Ok(_v) => (), //println!("{:?}", _v),
+		    Err(e) => return Err(e),
+		}
 	    }
+	} else {
+	    msd.write_msp(msp::MSP2_SENSOR_RANGE, t)?;
 	}
+
+	nn+=1;
 
 	thread::sleep(Duration::from_millis(200));
 	if start.elapsed() > Duration::new(2,0) {
@@ -198,6 +224,8 @@ fn main() ->  io::Result<()> {
 	    lat += rng.gen_range(-1000..1000);
 	    lon += rng.gen_range(-1000..1000);
 	    start = Instant::now();
+	    sr.quality += rng.gen_range(0..128) - 64;
+	    sr.dist_mm += rng.gen_range(-500..1000);
 	}
     }
 }
