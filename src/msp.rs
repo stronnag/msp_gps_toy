@@ -11,6 +11,7 @@ pub const MSG_BUILD_INFO: u16 = 5;
 pub const MSG_ANALOG: u16 = 110;
 pub const MSP_SET_RAW_GPS: u16 = 201;
 pub const MSP2_SENSOR_GPS: u16 = 0x1f03;
+pub const MSP2_SENSOR_RANGE: u16 = 0x1f01;
 
 //pub const MSG_IDENT: u16 = 100;
 //pub const MSG_WP_GETINFO: u16 = 20;
