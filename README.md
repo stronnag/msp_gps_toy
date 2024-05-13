@@ -2,7 +2,7 @@
 
 ## Overview
 
-This rust program exercises INAV's  `MSP SET_RAW_GPS` and  `MSP2_SENSOR_GPS` API.
+This rust program exercises INAV's  `MSP SET_RAW_GPS` / `MSP2_SENSOR_GPS` and `MSP2_SENSOR_RANGEFINDER` APIs.
 
 ## Prerequisites
 
@@ -26,51 +26,52 @@ This should result in a `target/release/msp_gps_toy` application. See `Makefile`
 
 ```
 $ msp_gps_toy [options] device-node
-Version: 0.1.0
+Version: 0.2.0
 
 Options:
     -v, --version       Show version
-    -s, --sensor        Use MSP2_SENSOR_GPS (vice MSP_SET_RAW GPS)
+    -r, --raw-gps       Use MSP_SET_RAW GPS (vice MSP2_SENSOR_GPS)
     -h, --help          print this help menu
 ```
 
-`device-node` represents a serial device node, matched to an INAV/MSP port (e.g. `/dev/ttyACM0`, `COM17`, `/dev/cuaU0`. No auto-detection of serial ports is performed. The parameter is mandatory.
-
+`device-node` represents a serial device node, matched to an INAV/MSP port (e.g. `/dev/ttyACM0`, `COM17`, `/dev/cuaU0`, `/dev/pts/4` etc. No auto-detection of serial ports is performed. The parameter is mandatory.
 
 ## Example
 
 ```
-$ msp_gps_toy -s /dev/ttyACM0
+$ msp_gps_toy /dev/pts/3
 MSP    : 2.5
 Name   : BENCHYMCTESTY
 F/W    : INAV
-Version: 7.0.0
-Build  : Jun  3 2023 17:59:16 (a6f3b768)
-Board  : WINGFC
-Analog : 11.9 volts,  0 amps
+Version: 8.0.0
+Build  : May  1 2024 06:45:13 (52564d6f)
+Board  : SITL
+Analog : 0.0 volts,  0 amps
 Message: MSP2_SENSOR_GPS
-
 ```
 You can check the GPS status in any MSP visualisation tool, using another MSP port.
 ```
-                                          MSP Test Viewer
-                           v0.32.0 on Arch Linux 6.3.5-zen1-1-zen x86_64
+                                MSP Test Viewer
+             v0.40.0 on Arch Linux 6.8.9-zen1-2-zen x86_64, (rust)
 
-Port    : /dev/rfcomm3:115200
+Port    : localhost:5760
 MW Vers : ---
 Name    : BENCHYMCTESTY
 API Vers: 2.5 (MSP v2)
 FC      : INAV
-FC Vers : 7.0.0
-Build   : Jun  3 2023 17:59:16 (a6f3b768)
-Board   : WINGFC
+FC Vers : 8.0.0
+Build   : May  1 2024 06:45:13 (52564d6f)
+Board   : SITL
 WP Info : 0 of 120, valid false
-Uptime  : 136s
-Power   : 11.8 volts,  0 amps
-GPS     : fix 2, sats 20, 35.760216° 140.379013° 15m, 10m/s 247° hdop 1.00
+Uptime  : 148s
+Power   : 0.0 volts,  0 amps
+GPS     : fix 2, sats 21, 35.760773° 140.378632° 85m, 10m/s 247° hdop 1.00
 Arming  : NavUnsafe RCLink (0x40800)
-IO Stats: 414 messages in 7.7s (53.9/s) (unknown: 1, crc 0)
+IO Stats: 18990 messages in 9.5s (1998.0/s) (unknown: 0, crc 0)
+Debug   : ---
 ```
+
+You can check the rangefinder in the Configurator / Sensors tab.
 
 ## Licence
 
