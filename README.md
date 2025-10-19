@@ -1,3 +1,22 @@
+**Migrated to [CODEBERG](https://codeberg.org/stronnag/msp_gps_toy)**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # MSP GPS / INAV example
 
 ## Overview
